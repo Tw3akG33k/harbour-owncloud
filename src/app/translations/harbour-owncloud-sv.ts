@@ -63,6 +63,10 @@
         <source>KDE Breeze Icon Theme (LGPL v2.1)</source>
         <translation>KDE Breeze ikontema (LGPL v2.1)</translation>
     </message>
+    <message>
+        <source>libqtcommandqueue (LGPL v2.1)</source>
+        <translation>libqtcommandqueue (LGPL v2.1)</translation>
+    </message>
 </context>
 <context>
     <name>AccountSelection</name>
@@ -122,16 +126,21 @@
         <source>Settings</source>
         <translation>Inställningar</translation>
     </message>
+    <message>
+        <source>Settings...</source>
+        <translation>Inställningar...</translation>
+    </message>
+    <message>
+        <source>%1 on %2</source>
+        <comment>username on https://server:443/dav/</comment>
+        <translation>%1 på %2</translation>
+    </message>
 </context>
 <context>
     <name>BasicAuthentication</name>
     <message>
         <source>Host address</source>
         <translation>Värdadress</translation>
-    </message>
-    <message>
-        <source>User name</source>
-        <translation>Användarnamn</translation>
     </message>
     <message>
         <source>Password</source>
@@ -176,6 +185,10 @@
     <message>
         <source>About</source>
         <translation>Om</translation>
+    </message>
+    <message>
+        <source>Username</source>
+        <translation>Användarnamn</translation>
     </message>
 </context>
 <context>
@@ -414,6 +427,25 @@
     </message>
 </context>
 <context>
+    <name>FileSelectionDialog</name>
+    <message>
+        <source>Storage:</source>
+        <translation>Lagring:</translation>
+    </message>
+    <message>
+        <source>Home directory</source>
+        <translation>Hemkatalog</translation>
+    </message>
+    <message>
+        <source>External storage</source>
+        <translation>Extern lagring</translation>
+    </message>
+    <message>
+        <source>External storage (2)</source>
+        <translation>Extern lagring (2)</translation>
+    </message>
+</context>
+<context>
     <name>SSLErrorDialog</name>
     <message>
         <source>Do you want to accept this certificate?</source>
@@ -447,16 +479,6 @@
         <translation>Inställningar</translation>
     </message>
     <message>
-        <source>Automatically log in to your ownCloud server when starting the app</source>
-        <comment>Login automatically description</comment>
-        <translation>Logga in automatiskt, till din ownCloud-server, när appen startas.</translation>
-    </message>
-    <message>
-        <source>Show global notifications when transfering files</source>
-        <comment>Notifications description</comment>
-        <translation>Visa övergripande meddelanden vid filöverföring</translation>
-    </message>
-    <message>
         <source>Camera photo backups</source>
         <translation>Säkerhetskopior av foton</translation>
     </message>
@@ -479,8 +501,8 @@
         <translation>Rensa cachen</translation>
     </message>
     <message>
-        <source>OK</source>
-        <translation>OK</translation>
+        <source>Clear downloads</source>
+        <translation>Rensa nerladdningar</translation>
     </message>
 </context>
 <context>
@@ -507,6 +529,13 @@
     </message>
 </context>
 <context>
+    <name>UbuntuContentHubOpener</name>
+    <message>
+        <source>Open &apos;%1&apos; with</source>
+        <translation>Öppna &quot;%1&quot; med</translation>
+    </message>
+</context>
+<context>
     <name>WebDavAccountDialog</name>
     <message>
         <source>Login failed</source>
@@ -519,10 +548,6 @@
     <message>
         <source>Host address</source>
         <translation>Värdadress</translation>
-    </message>
-    <message>
-        <source>User name</source>
-        <translation>Användarnamn</translation>
     </message>
     <message>
         <source>Password</source>
@@ -556,6 +581,10 @@
         <source>Please check your host address</source>
         <translation>Kontrollera värdadressen</translation>
     </message>
+    <message>
+        <source>Username</source>
+        <translation>Användarnamn</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -574,6 +603,14 @@
     <message>
         <source>No account available yet. Please add an account to continue.</source>
         <translation>Inget konto tillgängligt. Lägg till ett konto för att fortsätta.</translation>
+    </message>
+    <message>
+        <source>Upload file...</source>
+        <translation>Ladda upp fil...</translation>
+    </message>
+    <message>
+        <source>New folder...</source>
+        <translation>Ny mapp...</translation>
     </message>
 </context>
 </TS>

@@ -25,13 +25,16 @@ AccountWorkers* AccountWorkerGenerator::newAccount()
                 ProviderUtils::newStorageProviderByType(this, newAccountSettings);
         AccountInfoProvider* accountInfoProvider =
                 ProviderUtils::newAccountInfoProviderByType(this, newAccountSettings);
+        SharingProvider* sharingProvider =
+                ProviderUtils::newSharingProviderByType(this, newAccountSettings);
 
         AccountWorkers* newDefaultWorkers =
                 new AccountWorkers(Q_NULLPTR,
                                    newAccountSettings,
                                    browserCommandQueue,
                                    transferCommandQueue,
-                                   accountInfoProvider);
+                                   accountInfoProvider,
+                                   sharingProvider);
 
         this->m_defaultNewAW = std::unique_ptr<AccountWorkers>(newDefaultWorkers);
     }
@@ -92,7 +95,7 @@ void AccountWorkerGenerator::cleanup()
             continue;
         delete workers;
     }
-    accountWorkersChanged();
+    Q_EMIT accountWorkersChanged();
 }
 
 QVariantList AccountWorkerGenerator::accountWorkers()
@@ -104,12 +107,12 @@ QVariantList AccountWorkerGenerator::accountWorkers()
     return accWorkers;
 }
 
-AccountDb* AccountWorkerGenerator::database()
+AccountsDbInterface* AccountWorkerGenerator::database()
 {
     return this->m_database;
 }
 
-void AccountWorkerGenerator::setDatabase(AccountDb* database)
+void AccountWorkerGenerator::setDatabase(AccountsDbInterface* database)
 {
     if (this->m_database == database)
         return;
@@ -124,7 +127,7 @@ void AccountWorkerGenerator::setDatabase(AccountDb* database)
     this->m_database = database;
 
     if (this->m_database) {
-           QObject::connect(this->m_database, &AccountDb::accountsChanged,
+           QObject::connect(this->m_database, &AccountsDbInterface::accountsChanged,
                             this, &AccountWorkerGenerator::generateAccountWorkers);
     }
 

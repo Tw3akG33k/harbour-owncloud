@@ -1,11 +1,12 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.2
 
-Page {
+Dialog {
     title: qsTr("About GhostCloud")
     focus: true
 
     readonly property bool destroyable : false
+    standardButtons: Dialog.Ok
 
     signal closeRequest()
 
@@ -25,7 +26,7 @@ Page {
                 id: icon
                 source: "qrc:/icons/icon_gray.svg"
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: parent.width / 2
+                width: Math.min(parent.width / 3, 200)
                 height: width
                 scale: 1.5
                 sourceSize.width: width
@@ -123,7 +124,7 @@ Page {
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
-                        Qt.openUrlExternally("https://github.com/beidl/harbour-owncloud")
+                        Qt.openUrlExternally("https://github.com/fredldotme/harbour-owncloud")
                     }
                 }
                 anchors {
@@ -134,6 +135,18 @@ Page {
                 }
             }
 
+            Label {
+                text: qsTr("libqtcommandqueue (LGPL v2.1)")
+                font.pixelSize: fontSizeTiny
+                wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                horizontalAlignment: Text.AlignHCenter
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    leftMargin: fontSizeLarge
+                    rightMargin: fontSizeLarge
+                }
+            }
             Label {
                 text: qsTr("QWebDAV library (qwebdavlib) version 1.0 (LGPL v2.1)")
                 font.pixelSize: fontSizeTiny

@@ -59,7 +59,11 @@ SOURCES += \
     $$PWD/src/provider/accountinfo/accountinfoprovider.cpp \
     $$PWD/src/util/providerutils.cpp \
     $$PWD/src/accountworkers.cpp \
-    $$PWD/src/accountworkergenerator.cpp
+    $$PWD/src/accountworkergenerator.cpp \
+    $$PWD/src/provider/sharing/sharingprovider.cpp \
+    $$PWD/src/provider/sharing/ocssharingcommandqueue.cpp \
+    $$PWD/src/commands/ocs/ocssharelistcommandentity.cpp \
+    $$PWD/src/util/commandutil.cpp
 
 HEADERS += \
     $$PWD/src/net/abstractfetcher.h \
@@ -103,7 +107,12 @@ HEADERS += \
     $$PWD/src/util/providerutils.h \
     $$PWD/src/accountworkers.h \
     $$PWD/src/accountworkergenerator.h \
-    src/util/qappprepareutil.h
+    $$PWD/src/provider/sharing/sharingprovider.h \
+    $$PWD/src/util/qappprepareutil.h \
+    $$PWD/src/provider/sharing/ocssharingcommandqueue.h \
+    $$PWD/src/commands/ocs/ocssharelistcommandentity.h \
+    $$PWD/src/util/commandutil.h \
+    src/settings/db/accountsdbinterface.h
 
 include($$PWD/../../3rdparty/libqtcommandqueue/libqtcommandqueue.pri)
 
@@ -152,6 +161,18 @@ linux:!android {
 macx {
     LIBS += $$OUT_PWD/../../3rdparty/qwebdavlib/qwebdavlib/libqwebdav.1.dylib
     qwebdavlib.files += $$OUT_PWD/../../3rdparty/qwebdavlib/qwebdavlib/libqwebdav.1.dylib
+}
+
+# Ubuntu Touch configuration
+contains(CONFIG, click) {
+    DEFINES += GHOSTCLOUD_UBUNTU_TOUCH
+    SOURCES += \
+        $$PWD/src/commands/ubuntutouch/utfiledownloadcommandentity.cpp \
+        $$PWD/src/settings/db/utaccountsdb.cpp
+    HEADERS += \
+        $$PWD/src/commands/ubuntutouch/utfiledownloadcommandentity.h \
+        $$PWD/src/settings/db/utaccountsdb.h
+    LIBS += -lubuntu-download-manager-client -lOnlineAccountsQt
 }
 
 INSTALLS += qwebdavlib target

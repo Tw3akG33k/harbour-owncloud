@@ -20,6 +20,9 @@ CommandPageFlow {
     readonly property Component fileDetailsComponent :
         Qt.createComponent("qrc:/qml/qqc/pages/browser/FileDetails.qml",
                            Component.PreferSynchronous);
+    readonly property Component contentHubOpenerComponent :
+        Qt.createComponent("qrc:/qml/qqc/dialogs/fileselect/UbuntuContentHubOpener.qml",
+                           Component.PreferSynchronous);
 
     FileDetailsHelper { id: fileDetailsHelper }
 
@@ -34,6 +37,36 @@ CommandPageFlow {
             userInfo.freeBytes = fileDetailsHelper.getHRSize(receipt.result.freeBytes)
             userInfo.usedBytes = fileDetailsHelper.getHRSize(receipt.result.usedBytes)
             userInfo.totalBytes = fileDetailsHelper.getHRSize(receipt.result.totalBytes)
+        }
+    }
+
+    // Open files conditionally after download
+    Connections {
+        target: accountWorkers.transferCommandQueue
+        onCommandFinished: {
+            // Ignore invalid CommandReceipts
+            if (!receipt.valid) {
+                console.debug("invalid receipt")
+                return;
+            }
+
+            // Ignore if the command was intentionally aborted by the user
+            if (receipt.abortIntended) {
+                console.debug("abort intended")
+                return
+            }
+
+            console.log("transfer command finished")
+            const isFileDownload = (receipt.info.property("type") === "fileDownload")
+            if (!isFileDownload)
+                return;
+
+            const fileOpenRequested = receipt.info.property("fileOpen");
+            const fileDestination = "file://" + receipt.info.property("localPath");
+            if (!fileOpenRequested)
+                return
+
+            openFileDestination(fileDestination)
         }
     }
 
@@ -81,14 +114,40 @@ CommandPageFlow {
         }*/
     }
 
+    function openFileDestination(fileDestination) {
+        if (osIsUbuntuTouch) {
+            var contentHubOpener =
+            contentHubOpenerComponent.createObject(dialogLayer,
+                                                   {
+                                                       fileUri : fileDestination
+                                                   })
+            if (!contentHubOpener) {
+                console.error(contentHubOpenerComponent.errorString())
+                return;
+            }
+
+            dialogLayer.widthChanged.connect(function(){
+                contentHubOpener.width = dialogLayer.width
+            });
+            dialogLayer.heightChanged.connect(function(){
+                contentHubOpener.height = dialogLayer.height
+            });
+            contentHubOpener.width = dialogLayer.width
+            contentHubOpener.height = dialogLayer.height
+            contentHubOpener.open()
+        } else {
+            Qt.openUrlExternally(fileDestination)
+        }
+    }
+
     function startDownload(path, mimeType, open, overwriteExistingFile, lastModified, transferCommandQueue) {
-        var destinationDir = FilePathUtil.destination(accountWorkers.account)
-        var fileName = path.substring(path.lastIndexOf("/") + 1)
-        var localFilePath = destinationDir + "/" + fileName
+        const destinationDir = FilePathUtil.destination(accountWorkers.account)
+        const fileName = path.substring(path.lastIndexOf("/") + 1)
+        const localFilePath = destinationDir + "/" + fileName
         console.log("remote path: " + path)
         console.log("fileExists: " + localFilePath + "?")
 
-        var exists = FilePathUtil.fileExists(localFilePath);
+        const exists = FilePathUtil.fileExists(localFilePath);
 
         if (!overwriteExistingFile && exists) {
             fileExistsDialog.fileName = fileName
@@ -115,10 +174,10 @@ CommandPageFlow {
                 return
             }
 
-            var isDavListCommand = (receipt.info.property("type") === "davList")
-            var isDavMoveCommand = (receipt.info.property("type") === "davMove")
-            var isDavCopyCommand = (receipt.info.property("type") === "davCopy")
-            var isDavRmCommand = (receipt.info.property("type") === "davRemove")
+            const isDavListCommand = (receipt.info.property("type") === "davList")
+            const isDavMoveCommand = (receipt.info.property("type") === "davMove")
+            const isDavCopyCommand = (receipt.info.property("type") === "davCopy")
+            const isDavRmCommand = (receipt.info.property("type") === "davRemove")
 
             // Ignore invalid CommandReceipts
             if (!receipt.valid) {
@@ -156,8 +215,8 @@ CommandPageFlow {
             if (isDavListCommand) {
                 console.log("list command")
 
-                var remotePath = receipt.info.property("remotePath")
-                var dirContent = receipt.result.dirContent;
+                const remotePath = receipt.info.property("remotePath")
+                const dirContent = receipt.result.dirContent;
                 rootWindow.dirContents.insert(remotePath, dirContent);
 
                 if (remotePath !== targetRemotePath) {

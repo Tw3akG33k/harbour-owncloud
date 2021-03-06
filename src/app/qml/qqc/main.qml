@@ -2,6 +2,7 @@ import QtQuick 2.9
 import QtQuick.Window 2.3
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
+import Qt.labs.settings 1.0
 import harbour.owncloud 1.0
 import "qrc:/qml/qqc"
 import "qrc:/qml/qqc/controls"
@@ -32,6 +33,7 @@ ApplicationWindow {
     readonly property bool osIsAndroid : targetOs === 1
     readonly property bool osIsIOS : targetOs === 2
     readonly property bool osIsUbuntuTouch : targetOs === 3
+    readonly property bool osIsMacOs : targetOs === 4
 
     readonly property alias pageStack : rootStack
     readonly property alias detailsStack : sideStack
@@ -40,11 +42,34 @@ ApplicationWindow {
         (sideStack.depth > 1)
 
     readonly property bool sideStackIsActive : {
-        if (width > height) {
+        if (width > height && detailStackVisibleRequired) {
             return true;
         } else {
             return false;
         }
+    }
+    onSideStackIsActiveChanged: {
+        if (sideStackIsActive) {
+            pullInAnimation.stop();
+            pullOutAnimation.start()
+        } else {
+            pullOutAnimation.stop();
+            pullInAnimation.start();
+        }
+    }
+
+    // HACK: Refresh account db on Ubuntu Touch when focus changes.
+    //       This needs to be done until the Online Accounts Daemon
+    //       account enable/disable signal bug is fixed
+    onActiveChanged: {
+        if (!osIsUbuntuTouch)
+            return;
+        if (sideStack.currentItem !== sideStack.initialItem)
+            return;
+        if (!active)
+            return;
+
+        accountsDb.refresh()
     }
 
     readonly property alias dirContents : directoryContents
@@ -112,14 +137,19 @@ ApplicationWindow {
 
     function addAccount() {
         // TODO: check if memory leaks happen here
-        detailsStack.push(webDavAccountDialog)
+        //detailsStack.push(webDavAccountDialog)
+        if (osIsUbuntuTouch) {
+            Qt.openUrlExternally("settings:///online-accounts")
+        } else {
+            webDavAccountDialog.open()
+        }
     }
 
     // Android back button support
     onClosing: {
-        // TODO: save window geometry before closing
-        if (!osIsAndroid)
+        if (!osIsAndroid) {
             return
+        }
 
         if (showBackButton) {
             popPage()
@@ -127,6 +157,39 @@ ApplicationWindow {
         } else {
             return
         }
+    }
+
+    function getActionBarIcon(icon) {
+        if (osIsUbuntuTouch) {
+            if (icon === "application-menu") {
+                return "image://theme/navigation-menu"
+            }
+
+            return "image://theme/" + icon
+        } else {
+            if (icon === "list-add") {
+                return "qrc:/icons/theme/actions/24/" + icon + ".svg"
+            }
+
+            return "qrc:/icons/theme/actions/32/" + icon + ".svg"
+        }
+    }
+
+    function getFolderIcon(icon) {
+        if (osIsUbuntuTouch) {
+            return "image://theme/" + icon
+        } else {
+            return "qrc:/icons/theme/places/64/" + icon + ".svg"
+        }
+    }
+
+    Settings {
+        id: windowSettings
+        category: "windowProperties"
+        property alias width: rootWindow.width
+        property alias height: rootWindow.height
+        property alias x: rootWindow.x
+        property alias y: rootWindow.y
     }
 
     header: ToolBar {
@@ -137,7 +200,7 @@ ApplicationWindow {
         RowLayout {
             anchors.fill: parent
             GCButton {
-                source: "qrc:/icons/theme/actions/16/arrow-left-double.svg"
+                source: getActionBarIcon("go-previous")
                 visible: showBackButton
                 onClicked: popPage()
                 height: parent.height
@@ -153,6 +216,8 @@ ApplicationWindow {
                          sideStack.depth == 1
                 height: parent.height
                 width: height
+                forcePressed: rootStack.currentItem.avatarMenuOpen !== undefined &&
+                              rootStack.currentItem.avatarMenuOpen
                 source: {
                     if (rootStack.currentItem.objectName == "FileBrowser") {
                         return rootStack.currentItem.accountWorkers.avatarFetcher.source
@@ -176,6 +241,7 @@ ApplicationWindow {
                 elide: Label.ElideRight
                 horizontalAlignment: Qt.AlignHCenter
                 verticalAlignment: Qt.AlignVCenter
+                height: parent.height
                 Layout.fillWidth: true
                 text: {
                     if (sideStack.depth > 1 &&
@@ -190,35 +256,7 @@ ApplicationWindow {
             }
 
             GCButton {
-                source: "qrc:/icons/theme/actions/32/folder-new.svg"
-                visible: rootStack.currentItem.objectName === "FileBrowser" &&
-                         sideStack.depth == 1
-                enabled: !rootStack.currentItem.isBusy
-                height: parent.height
-                width: height
-                anchors.margins: paddingSmall
-                onClicked: {
-                    rootStack.currentItem.dirCreationDialog.open()
-                }
-            }
-            GCButton {
-                source: "qrc:/icons/theme/actions/32/document-new.svg"
-                visible: rootStack.currentItem.objectName === "FileBrowser" &&
-                         sideStack.depth == 1
-                enabled: !rootStack.currentItem.isBusy
-                height: parent.height
-                width: height
-                onClicked: {
-                    if (osIsAndroid) {
-                        rootStack.currentItem.openNativeFileSelector()
-                        return
-                    }
-
-                    rootStack.currentItem.fileUploadDialog.open()
-                }
-            }
-            GCButton {
-                source: "qrc:/icons/theme/actions/32/view-refresh.svg"
+                source: getActionBarIcon("view-refresh")
                 visible: rootStack.currentItem.objectName === "FileBrowser" &&
                          sideStack.depth == 1
                 enabled: !rootStack.currentItem.isBusy
@@ -230,10 +268,24 @@ ApplicationWindow {
                 }
             }
             GCButton {
-                source: "qrc:/icons/theme/actions/32/application-menu.svg"
+                source: getActionBarIcon("list-add")
+                visible: rootStack.currentItem.objectName === "FileBrowser" &&
+                         sideStack.depth == 1
+                enabled: !rootStack.currentItem.isBusy
                 height: parent.height
                 width: height
                 anchors.margins: paddingSmall
+                forcePressed: addMenu.visible
+                onClicked: {
+                    addMenu.open(rootWindow)
+                }
+            }
+            GCButton {
+                source: getActionBarIcon("application-menu")
+                height: parent.height
+                width: height
+                anchors.margins: paddingSmall
+                forcePressed: hamburgerMenu.visible
                 onClicked: {
                     hamburgerMenu.open(rootWindow)
                 }
@@ -241,21 +293,22 @@ ApplicationWindow {
         }
     }
 
+    AccountWorkerGenerator {
+        id: accountWorkerGenerator
+        database: accountsDb
+    }
+
+    DaemonControl {
+        id: daemonCtrl
+    }
+
+    QmlMap {
+        id: directoryContents
+    }
+
     Item {
+        id: dialogLayer
         anchors.fill: parent
-
-        AccountWorkerGenerator {
-            id: accountWorkerGenerator
-            database: AccountDb { }
-        }
-
-        DaemonControl {
-            id: daemonCtrl
-        }
-
-        QmlMap {
-            id: directoryContents
-        }
 
         Dialog {
             function showMessage(summary, body) {
@@ -274,6 +327,58 @@ ApplicationWindow {
             }
         }
 
+        WebDavAccountDialog {
+            id: webDavAccountDialog
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            width: parent.width - (paddingLarge * 2)
+            height: parent.height - (paddingLarge * 2)
+            accountWorkers: accountWorkerGenerator.newAccount();
+            daemonCtrl: daemonCtrl
+            accountDatabase: accountWorkerGenerator.database
+            viewStack: detailsStack
+        }
+
+        TransferPage {
+            id: transfersTab
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            width: parent.width - (paddingLarge * 2)
+            height: parent.height - (paddingLarge * 2)
+            accountGenerator: accountWorkerGenerator
+        }
+
+        About {
+            id: infoPage
+            x: (parent.width - width) / 2
+            y: (parent.height - height) / 2
+            width: parent.width - (paddingLarge * 2)
+            height: parent.height - (paddingLarge * 2)
+        }
+
+        Menu {
+            id: addMenu
+            x: rootWindow.width - width
+
+            MenuItem {
+                text: qsTr("Upload file...")
+                font.pixelSize: fontSizeSmall
+                onClicked: {
+                    if (osIsAndroid) {
+                        rootStack.currentItem.openNativeFileSelector()
+                        return
+                    }
+
+                    rootStack.currentItem.fileUploadDialog.open()
+                }
+            }
+            MenuItem {
+                text: qsTr("New folder...")
+                font.pixelSize: fontSizeSmall
+                visible: (accountWorkerGenerator.accountWorkers.length > 0)
+                onClicked: rootStack.currentItem.dirCreationDialog.open()
+            }
+        }
 
         Menu {
             id: hamburgerMenu
@@ -283,7 +388,7 @@ ApplicationWindow {
                 text: qsTr("Transfers")
                 font.pixelSize: fontSizeSmall
                 onClicked: {
-                    detailsStack.push(transfersTab)
+                    transfersTab.open()
                 }
             }
             MenuItem {
@@ -300,7 +405,7 @@ ApplicationWindow {
                 font.pixelSize: fontSizeSmall
                 visible: true
                 onClicked: {
-                    detailsStack.push(infoPage)
+                    infoPage.open()
                 }
             }
         }
@@ -327,9 +432,10 @@ ApplicationWindow {
                     anchors.centerIn: parent
                     width: parent.width
                     visible: accountWorkerGenerator.accountWorkers.length < 1
+                    spacing: 8
 
                     Text {
-                        font.pixelSize: 32
+                        font.pixelSize: 24
                         width: parent.width
                         wrapMode: Label.WrapAtWordBoundaryOrAnywhere
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -345,25 +451,6 @@ ApplicationWindow {
                         onClicked: addAccount()
                     }
                 }
-            }
-
-            WebDavAccountDialog {
-                id: webDavAccountDialog
-                accountWorkers: accountWorkerGenerator.newAccount();
-                daemonCtrl: daemonCtrl
-                accountDatabase: accountWorkerGenerator.database
-                viewStack: detailsStack
-            }
-
-            About {
-                id: infoPage
-                onCloseRequest: popAndTryDestroy()
-            }
-
-            TransferPage {
-                id: transfersTab
-                accountGenerator: accountWorkerGenerator
-                onCloseRequest: popAndTryDestroy()
             }
         }
 
@@ -425,7 +512,7 @@ ApplicationWindow {
                         }
                     }
                     onPushEnterChanged: {
-                        if (detailStackVisibleRequired) {
+                        if (sideStack.depth > 1) {
                             popAndTryDestroy();
                         }
                     }
@@ -437,13 +524,37 @@ ApplicationWindow {
             id: mainContainer
             color: "lightgray"
             anchors.fill: parent
+            anchors.bottomMargin: Qt.inputMethod.visible ?
+                                      Qt.inputMethod.keyboardRectangle.height / (GRID_UNIT_PX / 8) : 0
 
             Row {
                 id: splitView
                 anchors.fill: parent
-                anchors.topMargin: 2
-                spacing: 2
+                anchors.topMargin: 1
+                spacing: 1
                 focus: true
+
+                property real pullOutFactor : 0.0
+                readonly property int __pullOutDuration : 200
+
+                NumberAnimation {
+                    id: pullInAnimation
+                    target: splitView
+                    property: "pullOutFactor"
+                    duration: splitView.__pullOutDuration
+                    from: 1.0
+                    to: 0.0
+                    easing.type: Easing.InOutQuad
+                }
+                NumberAnimation {
+                    id: pullOutAnimation
+                    target: splitView
+                    property: "pullOutFactor"
+                    duration: splitView.__pullOutDuration
+                    from: 0.0
+                    to: 1.0
+                    easing.type: Easing.InOutQuad
+                }
 
                 Rectangle {
                     id: rootStackContainer
@@ -456,8 +567,10 @@ ApplicationWindow {
                     id: sideStackContainer
                     width: sideStackIsActive ? ((parent.width / 3) * 2)
                                              : parent.width
+                    scale: splitView.pullOutFactor
+                    opacity: splitView.pullOutFactor
                     height: parent.height
-                    visible: sideStackIsActive || detailStackVisibleRequired
+                    visible: sideStackIsActive
                     clip: true
                 }
             }

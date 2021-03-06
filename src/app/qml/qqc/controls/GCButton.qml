@@ -37,12 +37,15 @@ AbstractButton {
         }
         Column {
             height: parent.height
+            width: parent.width - img.width
             anchors.verticalCenter: parent.verticalCenter
             Label {
                 id: label
                 text: buttonRoot.text
                 font.pixelSize: fontSizeSmall
                 enabled: buttonRoot.enabled
+                elide: Label.ElideRight
+                width: parent.width
                 color: enabled ? "black"
                                : "lightgray"
             }
@@ -50,6 +53,8 @@ AbstractButton {
                 id: detailLabel
                 font.pixelSize: fontSizeTiny
                 enabled: buttonRoot.enabled
+                elide: Label.ElideRight
+                width: parent.width
                 color: enabled ? "black"
                                : "lightgray"
             }
@@ -59,7 +64,11 @@ AbstractButton {
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        onClicked: buttonRoot.clicked()
+        onClicked: {
+            if (forcePressed || pressed)
+                return;
+            buttonRoot.clicked()
+        }
         enabled: buttonRoot.enabled
     }
 }

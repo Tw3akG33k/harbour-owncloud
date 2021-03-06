@@ -27,16 +27,19 @@ Page {
             thumbnailFetcher.source :
             fileDetailsHelper.getIconFromMime(entry.mimeType)
 
-    readonly property bool isAudioVideo :
-        (!entry.isDirectory &&
-         (entry.mimeType.indexOf("video") === 0 ||
-          entry.mimeType.indexOf("audio") === 0))
+    readonly property bool supportsMediaPreview : !(osIsUbuntuTouch || osIsIOS || osIsMacOs)
+    readonly property bool supportsDownloads : !osIsIOS
 
-    readonly property string fileExistsHintText :
-        qsTr("The file '%1' already exists. Would you like to overwrite it?")
+    readonly property bool isAudio :
+        supportsMediaPreview && (!entry.isDirectory &&
+         (entry.mimeType.indexOf("audio") === 0))
+    readonly property bool isVideo :
+        supportsMediaPreview && (!entry.isDirectory &&
+         (entry.mimeType.indexOf("video") === 0))
+    readonly property bool isAudioVideo : (isAudio || isVideo)
 
     Component.onCompleted: {
-        if (isAudioVideo || entry.isDirectory)
+        if (isVideo || entry.isDirectory)
             return;
 
         thumbnailFetcher.remoteFile = entry.path
@@ -66,11 +69,11 @@ Page {
             Item {
                 // Wider side margins when only showing
                 // a default icon from the icon set
-                property int margins : (thumbnailFetcher.source === "" && !isAudioVideo)
-                                       ? (parent.width/4)
-                                       : (parent.width/8)
+                readonly property int margins : (thumbnailFetcher.source === "" && !isAudioVideo)
+                                                ? (parent.width/4)
+                                                : (parent.width/8)
                 id: filePreview
-                width: parent.width / 2
+                width: Math.min(256, parent.width / 2)
                 height: width
                 anchors.horizontalCenter: parent.horizontalCenter
 
@@ -79,9 +82,9 @@ Page {
                     id: thumbnail
                     anchors.fill: parent
                     source: (entry.isDirectory
-                                ? "qrc:/icons/theme/places/64/folder.svg"
+                                ? getFolderIcon("folder")
                                 : imgSrc)
-                    visible: !isAudioVideo
+                    visible: !isVideo
                 }
 
                 // Media player for video and audio preview
@@ -113,7 +116,7 @@ Page {
                 VideoOutput {
                     id: mediaView
                     source: previewPlayer
-                    visible: isAudioVideo
+                    visible: isVideo
                     anchors.fill: parent
                 }
                 GCButton {
@@ -124,7 +127,7 @@ Page {
                             "qrc:/icons/theme/actions/32/media-playback-start.svg"
                     height: 48
                     width: height
-                    visible: mediaView.visible
+                    visible: isAudioVideo
                     onClicked: {
                         console.log("clicked @ " + previewPlayer.playbackState)
                         if (previewPlayer.playbackState == MediaPlayer.PlayingState) {
@@ -152,6 +155,7 @@ Page {
 
                 Button {
                     text: qsTr("Download")
+                    visible: supportsDownloads
                     onClicked: {
                         startDownload(entry.path,
                                       entry.mimeType,
@@ -164,6 +168,20 @@ Page {
                 Button {
                     text: qsTr("Open")
                     onClicked: {
+                        const destinationDir = FilePathUtil.destination(accountWorkers.account)
+                        const fileName = entry.path.substring(entry.path.lastIndexOf("/") + 1)
+                        const localFilePath = destinationDir + entry.path
+                        const fileDestination = "file://" + localFilePath
+                        const exists = FilePathUtil.fileExists(localFilePath);
+
+                        console.log("fileDestination: " + fileDestination)
+
+                        if (exists) {
+                            // Open from cache
+                            openFileDestination(fileDestination);
+                            return;
+                        }
+
                         startDownload(entry.path,
                                       entry.mimeType,
                                       true,

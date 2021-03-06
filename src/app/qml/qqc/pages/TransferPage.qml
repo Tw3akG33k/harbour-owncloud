@@ -1,13 +1,11 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.2
-import QtQuick.Dialogs 1.2
 import harbour.owncloud 1.0
 import "qrc:/qml/qqc/controls"
 import "qrc:/qml-ui-set"
 
-Page {
+Dialog {
     id: pageRoot
-    focus: true
 
     signal closeRequest()
 
@@ -16,6 +14,8 @@ Page {
     property AccountWorkerGenerator accountGenerator : null
     property var activeAccountWorkers : accountGenerator.accountWorkers
     property bool noTransfersHint : true
+
+    standardButtons: Dialog.Ok
 
     function refreshNoTransfersHint()
     {
@@ -83,21 +83,21 @@ Page {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         contentHeight: groupDelegate.height
+        clip: true
 
-        Repeater {
+        Column {
             id: groupDelegate
-            model: activeAccountWorkers
             anchors.fill: parent
 
-            delegate: Column {
-                width: parent.width
+            Repeater {
+                model: activeAccountWorkers
 
-                property AccountWorkers accountWorker : activeAccountWorkers[index]
-                property CloudStorageProvider transferQueue : accountWorker.transferCommandQueue
+                delegate: Row {
+                    property AccountWorkers accountWorker : activeAccountWorkers[index]
+                    property CloudStorageProvider transferQueue : accountWorker.transferCommandQueue
 
-                Row {
                     spacing: paddingLarge
-                    width: parent.width
+                    width: flickableRoot.width
                     visible: transferQueue.queue.length > 0
 
                     Repeater {
@@ -123,9 +123,9 @@ Page {
 
                             function getIconForCommandType() {
                                 if (commandType == "fileDownload")
-                                    return "qrc:/icons/theme/actions/22/escape-direction-down.svg"
+                                    return "qrc:/icons/theme/actions/32/go-down.svg"
                                 if (commandType == "fileUpload")
-                                    return "qrc:/icons/theme/actions/22/escape-direction-up.svg"
+                                    return "qrc:/icons/theme/actions/32/go-up.svg"
                                 if (commandType == "fileOpen")
                                     return "qrc:/icons/theme/places/64/folder.svg"
                                 return ""
@@ -191,7 +191,6 @@ Page {
                                 }
                             }
                         }
-
                     }
                 }
             }

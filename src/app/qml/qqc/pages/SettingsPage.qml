@@ -4,39 +4,23 @@ import harbour.owncloud 1.0
 
 Page {
     id: pageRoot
-    focus: true
+    objectName: "settingsPage"
 
-    readonly property bool destroyable : false
+    readonly property bool destroyable : true
 
     property AccountWorkers accountWorkers : null
     property AccountDb accountDb : null
 
     Flickable {
         anchors.fill: parent
-
-//        PullDownMenu {
-//            id: pulley
-//            MenuItem {
-//                text: qsTr("Reset connection settings")
-//                onClicked: {
-//                    accountWorkers.transferQueue.stop()
-//                    accountWorkers.settings.resetSettings();
-//                    pageStack.clear();
-//                    pageStack.push(accountSelection);
-//                }
-//            }
-//        }
+        contentHeight: mainColumn.height
 
         Column {
+            id: mainColumn
             spacing: paddingSmall
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-            }
+            anchors.fill: parent
 
-            CheckBox {
+            /*CheckBox {
                 id: autoLoginSwitch
                 text: qsTr("Automatically log in to your ownCloud server when starting the app", "Login automatically description")
                 width: parent.width
@@ -50,7 +34,7 @@ Page {
                 width: parent.width
                 checked: accountWorkers.account.notifications
                 onClicked: accountWorkers.account.notifications = checked
-            }
+            }*/
 
             CheckBox {
                 id: cameraUploadSwitch
@@ -58,7 +42,10 @@ Page {
                 width: parent.width
                 visible: daemonCtrl.daemonInstalled
                 checked: accountWorkers.account.uploadAutomatically
-                onClicked: accountWorkers.account.uploadAutomatically = checked
+                onClicked:{
+                    accountWorkers.account.uploadAutomatically = checked
+                    accountDb.updateAccount(accountWorkers.account)
+                }
             }
 
             CheckBox {
@@ -68,7 +55,10 @@ Page {
                 visible: daemonCtrl.daemonInstalled
                 enabled: cameraUploadSwitch.checked
                 checked: accountWorkers.account.mobileUpload
-                onClicked: accountWorkers.account.mobileUpload = checked
+                onClicked: {
+                    accountWorkers.account.mobileUpload = checked
+                    accountDb.updateAccount(accountWorkers.account)
+                }
             }
 
             Row {
@@ -80,8 +70,8 @@ Page {
                 }
 
                 Button {
-                    text: qsTr("OK")
-                    onClicked: accountDb.updateAccount(accountWorkers.account)
+                    text: qsTr("Clear downloads")
+                    onClicked: accountWorkers.cacheProvider.clearDownloads()
                 }
             }
         }

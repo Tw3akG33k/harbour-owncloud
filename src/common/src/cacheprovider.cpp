@@ -5,10 +5,24 @@
 #include <QDirIterator>
 #include <QStandardPaths>
 
-CacheProvider::CacheProvider(QObject *parent) :
+#include <util/filepathutil.h>
+
+CacheProvider::CacheProvider(QObject* parent, AccountBase* account) :
     QObject(parent)
 {
-    this->m_cacheDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    if (!account) {
+        qWarning() << "No account provided, bailing out...";
+        return;
+    }
+    const QString cacheSubdir =
+            QStringLiteral("/%1/%2/%3/").arg(account->hostname(),
+                                             QString::number(account->port()),
+                                             account->username());
+    this->m_cacheDir =
+            QStandardPaths::writableLocation(QStandardPaths::CacheLocation) +
+            cacheSubdir;
+    this->m_downloadDir =
+            FilePathUtil::destination(account);
 
     const int clearInterval = 1000 * 60 * 60;
 
@@ -58,10 +72,11 @@ QFile* CacheProvider::getCacheFile(const QString &identifier, QFile::OpenMode mo
     return cacheFile;
 }
 
-void CacheProvider::clearCache()
+bool CacheProvider::clearPath(const QString& path)
 {
     bool cacheFileRemoved = false;
-    QDirIterator dirIterator(this->m_cacheDir, QDirIterator::Subdirectories);
+
+    QDirIterator dirIterator(path, QDirIterator::Subdirectories);
     while(dirIterator.hasNext()) {
         const QString cacheFilePath = dirIterator.next();
         const QFileInfo cacheFile(cacheFilePath);
@@ -77,6 +92,21 @@ void CacheProvider::clearCache()
         }
         cacheFileRemoved = true;
     }
+
+    return cacheFileRemoved;
+}
+
+void CacheProvider::clearCache()
+{
+    const bool cacheFileRemoved = clearPath(this->m_cacheDir);
+
+    if (cacheFileRemoved)
+        Q_EMIT cacheCleared();
+}
+
+void CacheProvider::clearDownloads()
+{
+    const bool cacheFileRemoved = clearPath(this->m_downloadDir);
 
     if (cacheFileRemoved)
         Q_EMIT cacheCleared();

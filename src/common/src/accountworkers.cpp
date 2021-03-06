@@ -9,14 +9,16 @@ AccountWorkers::AccountWorkers(QObject *parent,
                                AccountBase* account,
                                CloudStorageProvider* browserCommandQueue,
                                CloudStorageProvider* transferCommandQueue,
-                               AccountInfoProvider* accountInfoCommandQueue) :
+                               AccountInfoProvider* accountInfoCommandQueue,
+                               SharingProvider* sharingProvider) :
     QObject(parent),
     m_account(account),
     m_browserCommandQueue(browserCommandQueue),
     m_transferCommandQueue(transferCommandQueue),
-    m_accountInfoCommandQueue(accountInfoCommandQueue)
+    m_accountInfoCommandQueue(accountInfoCommandQueue),
+    m_sharingProvider(sharingProvider)
 {
-    this->m_cacheProvider = new CacheProvider(this);
+    this->m_cacheProvider = new CacheProvider(this, account);
     this->m_avatarFetcher = new AvatarFetcher(this);
     this->m_avatarFetcher->setCacheProvider(this->m_cacheProvider);
     this->m_avatarFetcher->setCommandQueue(this->m_browserCommandQueue);
@@ -43,6 +45,11 @@ CloudStorageProvider* AccountWorkers::transferCommandQueue()
 AccountInfoProvider* AccountWorkers::accountInfoCommandQueue()
 {
     return this->m_accountInfoCommandQueue;
+}
+
+SharingProvider* AccountWorkers::sharingProviderCommandQueue()
+{
+    return this->m_sharingProvider;
 }
 
 CacheProvider* AccountWorkers::cacheProvider()

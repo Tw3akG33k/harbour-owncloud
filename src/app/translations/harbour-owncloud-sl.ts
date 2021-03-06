@@ -63,6 +63,10 @@
         <source>KDE Breeze Icon Theme (LGPL v2.1)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>libqtcommandqueue (LGPL v2.1)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>AccountSelection</name>
@@ -122,15 +126,20 @@
         <source>Settings</source>
         <translation type="unfinished">Nastavitve</translation>
     </message>
+    <message>
+        <source>Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 on %2</source>
+        <comment>username on https://server:443/dav/</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>BasicAuthentication</name>
     <message>
         <source>Host address</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -175,6 +184,10 @@
     </message>
     <message>
         <source>About</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Username</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -414,6 +427,25 @@
     </message>
 </context>
 <context>
+    <name>FileSelectionDialog</name>
+    <message>
+        <source>Storage:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Home directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>External storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>External storage (2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SSLErrorDialog</name>
     <message>
         <source>Do you want to accept this certificate?</source>
@@ -447,16 +479,6 @@
         <translation type="unfinished">Nastavitve</translation>
     </message>
     <message>
-        <source>Automatically log in to your ownCloud server when starting the app</source>
-        <comment>Login automatically description</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show global notifications when transfering files</source>
-        <comment>Notifications description</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Camera photo backups</source>
         <translation type="unfinished"></translation>
     </message>
@@ -479,7 +501,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>OK</source>
+        <source>Clear downloads</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -508,6 +530,13 @@
     </message>
 </context>
 <context>
+    <name>UbuntuContentHubOpener</name>
+    <message>
+        <source>Open &apos;%1&apos; with</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>WebDavAccountDialog</name>
     <message>
         <source>Login failed</source>
@@ -519,10 +548,6 @@
     </message>
     <message>
         <source>Host address</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>User name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -557,6 +582,10 @@
         <source>Please check your host address</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Username</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -574,6 +603,14 @@
     </message>
     <message>
         <source>No account available yet. Please add an account to continue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Upload file...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New folder...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

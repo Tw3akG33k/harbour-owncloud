@@ -29,12 +29,36 @@ mfile.path = /
 apparmor.files += $$PWD/harbour-owncloud.apparmor
 apparmor.path = /
 
+# Daemon AppArmor profile
+daemonapparmor.files += $$PWD/harbour-owncloud-daemon.apparmor
+daemonapparmor.path = /
+
+# Desktop launcher icon
+desktopicon.files += $$PWD/ghostcloud.png
+desktopicon.path = /
+
 # Desktop launcher
 desktop.files += $$PWD/harbour-owncloud.desktop
 desktop.path = /
+
+# Accounts description
+accounts.files += $$PWD/harbour-owncloud.accounts
+accounts.path = /
+
+# Daemon desktop launcher
+daemondesktop.files += $$PWD/harbour-owncloud-daemon.desktop
+daemondesktop.path = /
+
+# Daemon launcher
+daemon.files += $$PWD/harbour-owncloud-daemon.json
+daemon.path = /
 
 # Run script
 runscript.files += $$PWD/run.sh
 runscript.path = /
 
-INSTALLS += mfile apparmor desktop runscript
+# Daemon run script
+rundaemonscript.files += $$PWD/run-daemon.sh
+rundaemonscript.path = /
+
+INSTALLS += mfile apparmor daemonapparmor runscript rundaemonscript desktopicon desktop daemondesktop daemon accounts

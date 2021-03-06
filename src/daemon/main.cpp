@@ -40,17 +40,23 @@ QString remoteDirectoryFromHwRelease()
                     line.replace("NAME=", "")
                     .replace("\"", "")
                     .replace("/", "_")
-                    .trimmed() + "/";
+                    .trimmed();
 
         }
     }
-    return QStringLiteral("/Jolla/");
+#ifdef GHOSTCLOUD_UBUNTU_TOUCH
+    return QStringLiteral("/GhostCloud");
+#else
+    return QStringLiteral("/Jolla");
+#endif
 }
 
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
     prepareAppProperties(app);
+
+    qInfo() << "Starting harbour-owncloud-daemon";
 
     // Status updates and config reload requests through DBus
     DBusHandler *dbusHandler = new DBusHandler();
@@ -96,32 +102,32 @@ int main(int argc, char *argv[])
         if (!settings->uploadAutomatically())
             continue;
 
-        const QString localPicturesPath =
-                QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+        qInfo() << "Photo backup enabled for account" << settings->hoststring();
 
         NetworkMonitor *netMonitor = new NetworkMonitor(workers, settings);
-        Filesystem *fsHandler = new Filesystem(settings, localPicturesPath);
-        Uploader* uploader = new Uploader(&app, localPicturesPath, targetDirectory, netMonitor, settings);
+        Filesystem *fsHandler = new Filesystem(settings);
+        Uploader* uploader = new Uploader(&app, targetDirectory, netMonitor, settings);
 
-        // Periodically check for existance of the local pictures path until found.
+        // Periodically check for existence of the local pictures path until found.
         // Don't stop the timer as the external storage could be ejected anytime.
         // Every 10 minutes should be enough in this specific case.
-        QDir localPath(localPicturesPath);
         QTimer localPathCheck;
         localPathCheck.setInterval(60000 * 10);
         localPathCheck.setSingleShot(false);
         QObject::connect(&localPathCheck, &QTimer::timeout, &localPathCheck,
-                         [&localPath, fsHandler]() {
-            if (!localPath.exists())
-                return;
+                         [fsHandler]() {
 
             fsHandler->triggerRescan();
         });
         localPathCheck.start();
 
-        QObject::connect(fsHandler, &Filesystem::fileFound, [uploader](QString fullPath){
+        QObject::connect(fsHandler, &Filesystem::locationFound, uploader, &Uploader::triggerSync);
+
+        // listen for new files
+        // NOTE: this signal is triggered for every file on filesystem rescan,
+        QObject::connect(fsHandler, &Filesystem::fileFound, [uploader](QString locationDir, QString locationName, QString fullPath){
             Q_UNUSED(fullPath)
-            uploader->triggerSync();
+            uploader->triggerSync(locationDir, locationName);
         });
 
         // DBus connections
@@ -136,7 +142,7 @@ int main(int argc, char *argv[])
             fsHandler->inhibitScan(!uploader->shouldSync());
 
             if (shouldSync) {
-                uploader->triggerSync();
+                fsHandler->triggerRescan();
             } else {
                 uploader->stopSync();
             }
@@ -157,7 +163,7 @@ int main(int argc, char *argv[])
                 return;
             }
             fsHandler->inhibitScan(!uploader->shouldSync());
-            uploader->triggerSync();
+            fsHandler->triggerRescan();
         }, Qt::QueuedConnection);
 
         netMonitor->recheckNetworks();

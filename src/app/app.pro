@@ -28,6 +28,12 @@ contains(CONFIG, quickcontrols) {
         QMAKE_INFO_PLIST = $$PWD/ios/Info.plist
     }
 
+    macx {
+        info.path = Contents
+        info.files += $$PWD/macos/Info.plist
+        QMAKE_BUNDLE_DATA += info
+    }
+
     # OpenSSL for Android
     android {
         LIBS += -L $$OUT_PWD/../../3rdparty/openssl -lcrypto -lssl
@@ -112,7 +118,8 @@ lupdate_only {
         qml/pages/SSLErrorDialog.qml \
         qml/pages/SettingsPage.qml \
         qml/pages/TransferPage.qml \
-        qml/pages/RemoteDirSelectDialog.qml
+        qml/pages/RemoteDirSelectDialog.qml \
+        qml/dummy/FileSelectionDialog.qml
 }
 
 # to disable building translations every time, comment out the
@@ -120,16 +127,13 @@ lupdate_only {
 CONFIG += sailfishapp_i18n
 TRANSLATIONS += \
     translations/harbour-owncloud-de.ts \
+    translations/harbour-owncloud-fi.ts \
+    translations/harbour-owncloud-fr.ts \
     translations/harbour-owncloud-sl.ts \
-    translations/harbour-owncloud-fr.ts
+    translations/harbour-owncloud-sv.ts \
+    translations/harbour-owncloud-zh_CN.ts
 
-icon86.files += icons/86x86/harbour-owncloud.png
-icon86.path = /usr/share/icons/hicolor/86x86/apps
-
-icon128.files += icons/128x128/harbour-owncloud.png
-icon128.path = /usr/share/icons/hicolor/128x128/apps
-
-INSTALLS += icon86 icon128
+SAILFISHAPP_ICONS = 86x86 108x108 128x128 172x172
 
 DEFINES += QWEBDAVITEM_EXTENDED_PROPERTIES
 

@@ -16,11 +16,11 @@ Name:       harbour-owncloud
 %{!?qtc_make:%define qtc_make make}
 %{?qtc_builddir:%define _builddir %qtc_builddir}
 Summary:    ownCloud
-Version:    0.9.0
+Version:    0.9.5
 Release:    1
 Group:      Qt/Qt
 License:    GPLv2
-URL:        https://github.com/beidl/harbour-owncloud
+URL:        https://github.com/fredldotme/harbour-owncloud
 Source0:    %{name}-%{version}.tar.bz2
 Source100:  harbour-owncloud.yaml
 Requires:   sailfishsilica-qt5 >= 0.10.9
@@ -80,8 +80,7 @@ desktop-file-install --delete-original       \
 %{_bindir}/%{name}
 %{_datadir}/%{name}
 %{_datadir}/applications/%{name}.desktop
-%{_datadir}/icons/hicolor/86x86/apps/%{name}.png
-%{_datadir}/icons/hicolor/128x128/apps/%{name}.png
+%{_datadir}/icons/hicolor/*/apps/%{name}.png
 
 %files daemon
 %defattr(755,root,root,-)
@@ -93,7 +92,7 @@ desktop-file-install --delete-original       \
 %{_libdir}/systemd/user/user-session.target.wants/%{name}-daemon.service
 %{_libdir}/systemd/user/user-session.target.wants/%{name}-permission-agent.service
 %{_datadir}/nemo-transferengine/plugins/
-%{_libdir}/nemo-transferengine/plugins/libowncloudshareplugin.so
+%{_libdir}/nemo-transferengine/plugins/libghostcloudshareplugin.so
 %{_libdir}/qt5/qml/com/github/beidl/harbourowncloud/libharbourowncloudqmlplugin.so
 %{_libdir}/qt5/qml/com/github/beidl/harbourowncloud/qmldir
 %{_datadir}/themes/sailfish-default/meegotouch/z1.0/icons/icon-m-share-%{name}.png

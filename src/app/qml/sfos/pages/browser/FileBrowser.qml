@@ -174,6 +174,12 @@ Page {
                     }
                     DetailItem {
                         width: parent.width
+                        label: qsTr("Free:")
+                        value: ocsUserInfo.hrFreeBytes
+                        visible: value.length > 0
+                    }
+                    DetailItem {
+                        width: parent.width
                         label: qsTr("Total:")
                         value: ocsUserInfo.hrTotalBytes
                         visible: value.length > 0
@@ -305,7 +311,7 @@ Page {
 
             CircularImageButton {
                 property bool __showAvatar :
-                    (accountWorkers.account.providerType === NextcloudSettings.Nextcloud)
+                    (accountWorkers.account.providerType === AccountBase.Nextcloud)
                 source: __showAvatar ? accountWorkers.avatarFetcher.source : ""
                 enabled: __showAvatar
                 visible: ocsUserInfo.userInfoEnabled
@@ -343,36 +349,72 @@ Page {
         delegate: ListItem {
             id: delegate
             enabled: (__listCommand === null)
+            contentHeight: mainEntryItem.height
 
             property var davInfo : listView.model[index]
 
-            Image {
-                id: icon
-                source: davInfo.isDirectory ?
-                            "image://theme/icon-m-folder" :
-                            fileDetailsHelper.getIconFromMime(davInfo.mimeType)
-                anchors.left: parent.left
-                anchors.leftMargin: Theme.horizontalPageMargin
-                anchors.top: parent.top
-                anchors.topMargin: Theme.paddingSmall
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: Theme.paddingSmall
-                enabled: parent.enabled
-                fillMode: Image.PreserveAspectFit
-            }
+            Item {
+                id: mainEntryItem
+                width: parent.width
+                height: itemLabel.height + entryDetails.height + Theme.paddingSmall
 
-            Label {
-                id: label
-                anchors.left: icon.right
-                anchors.leftMargin: Theme.paddingMedium
-                anchors.right: parent.right
-                enabled: parent.enabled
-                text: davInfo.name
-                anchors.verticalCenter: parent.verticalCenter
-                color: delegate.highlighted ?
-                           Theme.highlightColor :
-                           Theme.primaryColor
-                truncationMode: TruncationMode.Fade
+                Image {
+                    id: icon
+                    source: davInfo.isDirectory ?
+                                "image://theme/icon-m-folder" :
+                                fileDetailsHelper.getIconFromMime(davInfo.mimeType)
+                    enabled: parent.enabled
+                    fillMode: Image.PreserveAspectFit
+                    height: Math.min(Theme.iconSizeMedium, parent.height)
+                    width: height
+                    anchors {
+                        left: parent.left
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: Theme.paddingSmall
+                    }
+                }
+                Item {
+                    anchors {
+                        left: icon.right
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: Theme.paddingSmall
+                    }
+                    height: itemLabel.height + entryDetails.height
+
+                    Label {
+                        id: itemLabel
+                        anchors {
+                            left: parent.left
+                            top: parent.top
+                        }
+                        enabled: parent.enabled
+                        text: davInfo.name
+                        color: delegate.highlighted ?
+                                   Theme.highlightColor :
+                                   Theme.primaryColor
+                        truncationMode: TruncationMode.Fade
+                        font.pixelSize: Theme.fontSizeSmall
+                    }
+
+                    Label {
+                        anchors {
+                            left: parent.left
+                            top: itemLabel.bottom
+                        }
+                        id: entryDetails
+                        enabled: parent.enabled
+                        text: fileDetailsHelper.getHRSize(davInfo.size)
+                              + (!davInfo.isDirectory ?
+                                     (", " +
+                                      Qt.formatDateTime(davInfo.lastModified, Qt.SystemLocaleShortDate)) : "")
+                        color: delegate.highlighted ?
+                                   Theme.highlightColor :
+                                   Theme.primaryColor
+                        truncationMode: TruncationMode.Fade
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                    }
+                }
             }
 
             function showDetails() {

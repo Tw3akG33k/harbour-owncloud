@@ -1,10 +1,18 @@
 {
   "template": "qmake",
   "default": "clean build click-build",
+  "kill": "harbour-owncloud",
+  "dependencies_target": [
+    "libubuntu-download-manager-client-dev",
+    "libonline-accounts-qt-dev"
+  ],
   "build_args": [
-    "CONFIG+=noadditionals",
+    "CONFIG+=nopermissionagent",
+    "CONFIG+=noqmlextension",
+    "CONFIG+=nosharing",
     "CONFIG+=quickcontrols",
     "CONFIG+=click"
   ],
-  "make_jobs": 4
+  "make_jobs": 4,
+  "qt_version": "5.12"
 }

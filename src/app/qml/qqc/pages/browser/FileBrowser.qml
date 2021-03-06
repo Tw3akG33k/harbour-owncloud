@@ -53,33 +53,23 @@ Page {
         // Ubuntu Touch
         if (osIsUbuntuTouch) {
             fileUploadDialog = ubuntuContentPicker.createObject(pageRoot)
-            fileUploadDialog.accepted.connect(function (){
-                for (var i = 0; i < fileUploadDialog.importItems.length; i++) {
-                    console.log("Enqueueing upload " +
-                                fileUploadDialog.importItems[i].url +
-                                " to " + pageRoot.remotePath)
-
-                    transferCommandQueue.fileUploadRequest(fileUploadDialog.importItems[i].url,
-                                                           pageRoot.remotePath)
-                }
-                transferCommandQueue.run()
-            })
         }
         // Generic incl. Android and iOS
         else {
             fileUploadDialog = qqdFilePicker.createObject(pageRoot)
-            fileUploadDialog.accepted.connect(function (){
-                for (var i = 0; i < fileUploadDialog.fileUrls.length; i++) {
-                    console.log("Enqueueing upload " +
-                                fileUploadDialog.fileUrls[i] +
-                                " to " + pageRoot.remotePath)
-
-                    transferCommandQueue.fileUploadRequest(fileUploadDialog.fileUrls[i],
-                                                           pageRoot.remotePath)
-                }
-                transferCommandQueue.run()
-            })
         }
+
+        fileUploadDialog.accepted.connect(function (){
+            for (var i = 0; i < fileUploadDialog.fileUrls.length; i++) {
+                console.log("Enqueueing upload " +
+                            fileUploadDialog.fileUrls[i] +
+                            " to " + pageRoot.remotePath)
+
+                transferCommandQueue.fileUploadRequest(fileUploadDialog.fileUrls[i],
+                                                       pageRoot.remotePath)
+            }
+            transferCommandQueue.run()
+        })
     }
 
 
@@ -239,54 +229,84 @@ Page {
     }
 
     function openAvatarMenu() {
-        if (!pageFlow.userInfo.enabled)
-            return
-
         avatarMenu.open()
+        avatarMenuOpen = true
     }
+    property bool avatarMenuOpen : false
 
     Menu {
         id: avatarMenu
-        DetailItem {
-            width: parent.width
-            label: qsTr("User:")
-            value: pageFlow.userInfo.displayName
+        height: userInfoColumn.childrenRect.height + paddingMedium
+        width: parent.width - paddingLarge*2
+        x: paddingLarge
+
+        onClosed: {
+            avatarMenuOpen = false
         }
-        /*DetailItem {
-            width: parent.width
-            label: qsTr("Mail:")
-            value: pageFlow.userInfo.email
-        }*/
-        DetailItem {
-            width: parent.width
-            label: qsTr("Usage:")
-            value: pageFlow.userInfo.usedBytes
-        }
-        DetailItem {
-            width: parent.width
-            label: qsTr("Free:")
-            value: pageFlow.userInfo.totalBytes
-        }
-        DetailItem {
-            width: parent.width
-            label: qsTr("Total:")
-            value: pageFlow.userInfo.totalBytes
-        }
-        /*MouseArea {
-            width: parent.width - paddingSmall*2
-            height: settingsButton.height
-            anchors.horizontalCenter: parent.horizontalCenter
-            Label {
-                id: settingsButton
-                text: qsTr("Settings")
+
+        Column {
+            id: userInfoColumn
+            anchors.fill: parent
+
+            DetailItem {
+                ratio: 0.35
+                width: parent.width
+                label: qsTr("User:")
+                value: pageFlow.userInfo.displayName
+                visible: pageFlow.userInfo.enabled && value.length > 0
+            }
+            DetailItem {
+                ratio: 0.35
+                width: parent.width
+                label: qsTr("Mail:")
+                value: pageFlow.userInfo.email
+                visible: pageFlow.userInfo.enabled && value.length > 0
+            }
+            DetailItem {
+                ratio: 0.35
+                width: parent.width
+                label: qsTr("Usage:")
+                value: pageFlow.userInfo.usedBytes
+                visible: pageFlow.userInfo.enabled && value.length > 0
+            }
+            DetailItem {
+                ratio: 0.35
+                width: parent.width
+                label: qsTr("Free:")
+                value: pageFlow.userInfo.freeBytes
+                visible: pageFlow.userInfo.enabled && value.length > 0
+            }
+            DetailItem {
+                ratio: 0.35
+                width: parent.width
+                label: qsTr("Total:")
+                value: pageFlow.userInfo.totalBytes
+                visible: pageFlow.userInfo.enabled && value.length > 0
+            }
+            /*MouseArea {
+                readonly property string settingsUrl : accountWorkers.accountInfoCommandQueue.providerSettingsUrl()
+                width: parent.width - paddingSmall*2
+                height: !visible ? 0 : settingsButton.font.pixelSize + paddingTiny
                 anchors.horizontalCenter: parent.horizontalCenter
-                font.underline: true
-                color: "blue"
-            }
-            onClicked: {
-                Qt.openUrlExternally(accountWorkers.providerSettingsUrl)
-            }
-        }*/
+                visible: settingsUrl !== ""
+
+                Label {
+                    id: settingsButton
+                    text: qsTr("Change user info")
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    font.underline: true
+                    color: parent.pressed ? "red" : "blue"
+                }
+                onClicked: {
+                    if (settingsUrl === "") {
+                        return
+                    }
+
+                    console.log("Opening: " + settingsUrl)
+                    Qt.openUrlExternally(settingsUrl)
+                }
+            }*/
+        }
     }
 
     Connections {
@@ -420,7 +440,7 @@ Page {
             enabled: true
             text: qsTr("Details")
             font.pixelSize: fontSizeSmall
-            onClicked: openDetails(rightClickMenu.selectedDavInfo, accountWorkers);
+            onClicked: openDetails(rightClickMenu.selectedDavInfo);
         }
     }
 
@@ -481,7 +501,7 @@ Page {
             GCButton {
                 id: icon
                 source: davInfo.isDirectory
-                        ? "qrc:/icons/theme/places/64/folder.svg"
+                        ? getFolderIcon("folder")
                         : fileDetailsHelper.getIconFromMime(davInfo.mimeType)
                 text: davInfo.name
                 detailText: fileDetailsHelper.getHRSize(davInfo.size)

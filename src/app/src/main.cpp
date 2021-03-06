@@ -1,4 +1,5 @@
 // Qt Core & QML
+#include <QByteArray>
 #include <QGuiApplication>
 #include <QtQuick>
 #include <QDebug>
@@ -20,11 +21,13 @@
 #include <provider/storage/webdavcommandqueue.h>
 #include <provider/accountinfo/ocscommandqueue.h>
 #include <settings/inifilesettings.h>
+#include <settings/db/accountsdbinterface.h>
 #include <settings/db/accountdb.h>
 #include <settings/db/syncdb.h>
 #include <auth/qwebdavauthenticator.h>
 #include <auth/authenticationexaminer.h>
 #include <auth/flowloginauthenticator.h>
+#include <util/commandutil.h>
 #include <util/filepathutil.h>
 #include <util/qappprepareutil.h>
 #include <net/thumbnailfetcher.h>
@@ -32,11 +35,14 @@
 #include <qmlmap.h>
 #include <nextcloudendpointconsts.h>
 #include <cacheprovider.h>
+#ifdef GHOSTCLOUD_UBUNTU_TOUCH
+#include <settings/db/utaccountsdb.h>
+#endif
 
 // Platform-specific functionality
-#if defined(Q_OS_ANDROID) || defined(Q_OS_MAC) || defined(Q_OS_IOS)
+#if !defined(QT_DBUS_LIB)
 #include "daemonctrl/dummydaemonctrl.h"
-#elif defined(Q_OS_UNIX) && !defined(Q_OS_ANDROID)
+#else
 #include "daemonctrl/daemoncontrol.h"
 #endif
 
@@ -73,6 +79,15 @@ static QJSValue filePathUtilProvider(QQmlEngine *engine, QJSEngine *scriptEngine
 
     QJSValue filePathUtilObj = scriptEngine->newQObject(new FilePathUtil);
     filePathUtilObj.setProperty("FilePathUtil", filePathUtilObj);
+    return filePathUtilObj;
+}
+
+static QJSValue commandUtilProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
+{
+    Q_UNUSED(engine)
+
+    QJSValue filePathUtilObj = scriptEngine->newQObject(new CommandUtil);
+    filePathUtilObj.setProperty("CommandUtil", filePathUtilObj);
     return filePathUtilObj;
 }
 
@@ -115,7 +130,8 @@ enum GCTargetOs {
     GENERIC = 0,
     ANDROID_OS,
     IOS,
-    UBUNTU_TOUCH
+    UBUNTU_TOUCH,
+    MACOS
 };
 
 int main(int argc, char *argv[])
@@ -140,6 +156,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<DirectoryContentModel>("harbour.owncloud", 1, 0, "DirectoryContentModel");
     qmlRegisterType<AccountBase>("harbour.owncloud", 1, 0, "AccountBase");
     qmlRegisterType<AccountDb>("harbour.owncloud", 1, 0, "AccountDb");
+    qmlRegisterType<AccountsDbInterface>("harbour.owncloud", 1, 0, "AccountsDbInterface");
     qmlRegisterType<SyncDb>("harbour.owncloud", 1, 0, "SyncDb");
     qmlRegisterType<QWebDavAuthenticator>("harbour.owncloud", 1, 0, "QWebDavAuthenticator");
     qmlRegisterType<FlowLoginAuthenticator>("harbour.owncloud", 1, 0, "FlowLoginAuthenticator");
@@ -164,23 +181,27 @@ int main(int argc, char *argv[])
     qmlRegisterUncreatableType<AccountWorkers>("harbour.owncloud", 1, 0, "AccountWorkers",
                                                "AccountWorkers are provided through the AccountDbWorkers type");
     qmlRegisterSingletonType("harbour.owncloud", 1, 0, "FilePathUtil", filePathUtilProvider);
+    qmlRegisterSingletonType("harbour.owncloud", 1, 0, "CommandUtil", commandUtilProvider);
 
     QGuiApplication* app = SailfishApp::application(argc, argv);
     prepareAppProperties(*app);
 
     QIcon::setThemeName("theme");
 
+    // Create common directories
     {
         createNecessaryDir(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation));
         createNecessaryDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     }
 
+#ifndef GHOSTCLOUD_UBUNTU_TOUCH
+    // Migrate settings from .ini to the new database
+    AccountDb accountsDb;
     {
-        AccountDb accounts;
         IniFileSettings iniSettings;
         if (QFile::exists(iniSettings.filePath())) {
             iniSettings.readSettings();
-            const bool addAccountSuccess = accounts.addAccount(&iniSettings);
+            const bool addAccountSuccess = accountsDb.addAccount(&iniSettings);
             if (!addAccountSuccess) {
                 qWarning() << "Failed to migrate account";
             } else {
@@ -191,7 +212,13 @@ int main(int argc, char *argv[])
             }
         }
     }
+#else
+    UtAccountsDb accountsDb;
+#endif
 
+    bool gspParse = false;
+    const int gspEnv = qgetenv("GRID_UNIT_PX").toInt(&gspParse);
+    const int GRID_UNIT_PX = gspParse ? gspEnv : 8;
 
 #if defined(Q_OS_ANDROID)
     // Keep asking for file access permissions
@@ -205,21 +232,30 @@ int main(int argc, char *argv[])
 #elif defined(GHOSTCLOUD_UBUNTU_TOUCH)
     const int headerBarSize = 48;
     const GCTargetOs targetOs = GCTargetOs::UBUNTU_TOUCH;
+#elif defined(Q_OS_MAC)
+    const int headerBarSize = 38;
+    const GCTargetOs targetOs = GCTargetOs::MACOS;
 #else
     const int headerBarSize = 38;
     const GCTargetOs targetOs = GCTargetOs::GENERIC;
 #endif
 
 #ifndef GHOSTCLOUD_UI_QUICKCONTROLS
+    Q_UNUSED(GRID_UNIT_PX);
+    Q_UNUSED(headerBarSize);
+    Q_UNUSED(targetOs);
     QQmlEngine* newEngine = new QQmlEngine;
     QQuickView *view = new QQuickView(newEngine, Q_NULLPTR); //SailfishApp::createView();
 
+    newEngine->rootContext()->setContextProperty("accountsDb", &accountsDb);
     view->setSource(QUrl("qrc:/qml/sfos/harbour-owncloud.qml"));
     view->showFullScreen();
 #else
     QQmlApplicationEngine* newEngine = new QQmlApplicationEngine(app);
     newEngine->rootContext()->setContextProperty("headerBarSize", headerBarSize);
     newEngine->rootContext()->setContextProperty("targetOs", targetOs);
+    newEngine->rootContext()->setContextProperty("GRID_UNIT_PX", GRID_UNIT_PX);
+    newEngine->rootContext()->setContextProperty("accountsDb", &accountsDb);
     newEngine->load(QUrl("qrc:/qml/qqc/main.qml"));
 #endif
 

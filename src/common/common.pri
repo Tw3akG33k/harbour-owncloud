@@ -2,7 +2,9 @@ CONFIG += qt c++11
 QT += network xml sql
 
 linux:!android {
-    QT += dbus
+    !contains(CONFIG, quickcontrols) {
+        QT += dbus
+    }
 }
 android {
     QT += androidextras
@@ -41,12 +43,23 @@ linux:!android {
 
 macx {
     LIBS += $$OUT_PWD/../../3rdparty/qwebdavlib/qwebdavlib/libqwebdav.1.dylib
+    PRE_TARGETDEPS += $$OUT_PWD/../../3rdparty/qwebdavlib/qwebdavlib/libqwebdav.1.dylib
+
+    libs.path = Contents/MacOS
+    libs.files += $$OUT_PWD/../../3rdparty/qwebdavlib/qwebdavlib/libqwebdav.1.dylib
+
     CONFIG(release, debug|release) {
         LIBS += $$OUT_PWD/../../src/common/libharbourowncloudcommon.1.dylib
+        PRE_TARGETDEPS += $$OUT_PWD/../../src/common/libharbourowncloudcommon.1.dylib
+        libs.files += $$OUT_PWD/../../src/common/libharbourowncloudcommon.1.dylib
     }
     CONFIG(debug, debug|release) {
         LIBS += $$OUT_PWD/../../src/common/libharbourowncloudcommon_debug.1.dylib
+        PRE_TARGETDEPS += $$OUT_PWD/../../src/common/libharbourowncloudcommon_debug.1.dylib
+        libs.files += $$OUT_PWD/../../src/common/libharbourowncloudcommon_debug.1.dylib
     }
+
+    QMAKE_BUNDLE_DATA += libs
 }
 
 ios {
@@ -68,6 +81,7 @@ contains(CONFIG, sailfish_build) {
 # Ubuntu Touch configuration
 contains(CONFIG, click) {
     DEFINES += GHOSTCLOUD_UBUNTU_TOUCH
+    DEFINES += OS_SUPPORTS_THEME_PROVIDER # Qml-Ui-Set
 }
 
 QMAKE_RPATHDIR += /usr/share/harbour-owncloud/lib

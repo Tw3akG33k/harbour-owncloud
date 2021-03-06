@@ -7,10 +7,16 @@ import "qrc:/qml-ui-set"
 
 Item {
     id: accountsSelectionRoot
+
     property AccountWorkerGenerator accountGenerator : null
     property Component browserPage : null
     property QmlMap dirContents : null
     property StackView detailStack : null
+    property bool avatarMenuOpen : false
+
+    readonly property Component settingsPageComponent :
+        Qt.createComponent("qrc:/qml/qqc/pages/SettingsPage.qml",
+                           Component.PreferSynchronous);
 
     onDirContentsChanged: {
         console.log("AccountSelection.dirContents: " + dirContents)
@@ -42,6 +48,18 @@ Item {
         id: rightClickMenu
 
         MenuItem {
+            text: qsTr("Settings...")
+            font.pixelSize: fontSizeSmall
+            onClicked: {
+                var settingsPage = settingsPageComponent.createObject(detailStack,
+                                                                      {
+                    accountDb : accountGenerator.database,
+                    accountWorkers : selectedAccountWorkers
+                                                                      });
+                detailStack.push(settingsPage)
+            }
+        }
+        MenuItem {
             text: qsTr("Remove account")
             font.pixelSize: fontSizeSmall
             onClicked: {
@@ -64,7 +82,8 @@ Item {
             id: accountMouseArea
             width: childrenRect.width
             height: childrenRect.height
-            enabled: (__listCommand == null)
+            enabled: (__listCommand == null) &&
+                     (detailStack.currentItem.objectName !== "settingsPage")
             acceptedButtons: Qt.LeftButton | Qt.RightButton
 
             readonly property var delegateAccountWorkers : accountGenerator.accountWorkers[index]
@@ -114,13 +133,13 @@ Item {
                     font.bold: true
                     font.pixelSize: fontSizeMedium
                     enabled: __listCommand == null
+                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                    width: accountsList.width
                 }
 
                 Label {
                     id: userLabel
-                    text: delegateAccountWorkers.account.username
-                          + " on "
-                          + delegateAccountWorkers.account.hoststring
+                    text: qsTr("%1 on %2", "username on https://server:443/dav/").arg(delegateAccountWorkers.account.username).arg(delegateAccountWorkers.account.hoststring)
                     font.pixelSize: fontSizeMedium
                     enabled: __listCommand == null
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
